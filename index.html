@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="theme-color" content="#4F46E5">
+    <title>FinTrack- Catatan Keuangan Pribadi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        :root {
+            --primary: #4F46E5;
+            --primary-dark: #4338CA;
+            --primary-light: #818CF8;
+            --secondary: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+            --dark: #1E293B;
+            --gray-dark: #475569;
+            --gray: #94A3B8;
+            --gray-light: #E2E8F0;
+            --bg-light: #F8FAFC;
+            --white: #FFFFFF;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --radius: 1rem;
+            --radius-lg: 1.5rem;
+        }
+
+        body.dark {
+            --bg-light: #0F172A;
+            --white: #1E293B;
+            --dark: #F1F5F9;
+            --gray-light: #334155;
+        }
+
+        body {
+            background: var(--bg-light);
+            color: var(--dark);
+            transition: all 0.3s;
+        }
+
+        .top-nav {
+            background: var(--white);
+            box-shadow: var(--shadow);
+            padding: 0.875rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-icon i {
+            font-size: 1.6rem;
+            color: white;
+        }
+
+        .logo-text h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .logo-text p {
+            font-size: 0.7rem;
+            color: var(--gray);
+            margin-top: -2px;
+        }
+
+        .welcome-section {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+
+        .welcome-greeting {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .datetime {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            opacity: 0.9;
+            flex-wrap: wrap;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--bg-light);
+            padding: 0.5rem 1rem;
+            border-radius: 60px;
+            cursor: pointer;
+            border: 1px solid var(--gray-light);
+        }
+
+        .user-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--primary);
+        }
+
+        .user-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .user-email {
+            font-size: 0.7rem;
+            color: var(--gray);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 70px;
+            right: 2rem;
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            width: 260px;
+            overflow: hidden;
+            display: none;
+            z-index: 200;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: var(--bg-light);
+        }
+
+        .main-content {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Login Styles */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1rem;
+        }
+
+        .login-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+
+        .login-logo i {
+            font-size: 2.5rem;
+            color: white;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-light);
+            padding: 0.5rem;
+            border-radius: 60px;
+            margin-bottom: 1.5rem;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            background: transparent;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--gray-dark);
+        }
+
+        .auth-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.85rem 1rem 0.85rem 2.8rem;
+            border: 1px solid var(--gray-light);
+            border-radius: 14px;
+            background: var(--white);
+            color: var(--dark);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 0.85rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-outline {
+            width: 100%;
+            padding: 0.85rem;
+            background: transparent;
+            border: 1px solid var(--gray-light);
+            border-radius: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            color: var(--dark);
+        }
+
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+            color: var(--gray);
+        }
+
+        .auth-divider::before,
+        .auth-divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--gray-light);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--gray-light);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon.income { background: #D1FAE5; color: var(--secondary); }
+        .stat-icon.expense { background: #FEE2E2; color: var(--danger); }
+        .stat-icon.balance { background: #E0E7FF; color: var(--primary); }
+        .stat-icon.count { background: #FEF3C7; color: var(--warning); }
+
+        body.dark .stat-icon.income { background: #064E3B; }
+        body.dark .stat-icon.expense { background: #7F1D1D; }
+        body.dark .stat-icon.balance { background: #1E1B4B; }
+        body.dark .stat-icon.count { background: #78350F; }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-small {
+            padding: 0.7rem 1.5rem;
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-primary-small {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary-small:hover {
+            background: var(--primary-dark);
+            transform: scale(1.02);
+        }
+
+        .btn-outline-small {
+            background: transparent;
+            border: 1px solid var(--gray-light);
+            color: var(--dark);
+        }
+
+        .btn-outline-small:hover {
+            background: var(--bg-light);
+            border-color: var(--primary);
+        }
+
+        .filter-bar {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            border: 1px solid var(--gray-light);
+        }
+
+        .filter-input {
+            flex: 1;
+            min-width: 160px;
+            position: relative;
+        }
+
+        .filter-input i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        .filter-input input,
+        .filter-input select {
+            width: 100%;
+            padding: 0.7rem 1rem 0.7rem 2.5rem;
+            border: 1px solid var(--gray-light);
+            border-radius: 60px;
+            background: var(--white);
+            color: var(--dark);
+            font-size: 0.85rem;
+        }
+
+        .filter-input input:focus,
+        .filter-input select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .transactions-container {
+            background: var(--white);
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--gray-light);
+        }
+
+        .transactions-header {
+            display: grid;
+            grid-template-columns: 2.5fr 1.2fr 1.3fr 1.5fr 1fr;
+            padding: 1rem;
+            background: var(--bg-light);
+            font-weight: 700;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .transaction-row {
+            display: grid;
+            grid-template-columns: 2.5fr 1.2fr 1.3fr 1.5fr 1fr;
+            padding: 1rem;
+            align-items: center;
+            border-bottom: 1px solid var(--gray-light);
+            transition: background 0.2s;
+        }
+
+        .transaction-row:hover {
+            background: var(--bg-light);
+        }
+
+        .transaction-category {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .category-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .amount-income { color: var(--secondary); font-weight: 700; }
+        .amount-expense { color: var(--danger); font-weight: 700; }
+
+        .transaction-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: all 0.2s;
+            color: var(--gray);
+        }
+
+        .icon-btn:hover {
+            background: var(--gray-light);
+            color: var(--primary);
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .chart-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            border: 1px solid var(--gray-light);
+            transition: transform 0.2s;
+        }
+
+        .chart-card:hover {
+            transform: translateY(-2px);
+        }
+
+        canvas {
+            max-height: 250px;
+            width: 100%;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 500px;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .modal-header h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--gray-light);
+            border-radius: 12px;
+            background: var(--white);
+            color: var(--dark);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .avatar-preview {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 1rem;
+            display: block;
+            border: 3px solid var(--primary);
+            cursor: pointer;
+        }
+
+        .avatar-preview:hover {
+            opacity: 0.8;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--gray);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--dark);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 60px;
+            z-index: 1100;
+            opacity: 0;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--gray-light);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .upload-area {
+            border: 2px dashed var(--gray-light);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 1rem;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(79, 70, 229, 0.05);
+        }
+
+        .upload-area i {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .top-nav { padding: 0.875rem 1rem; }
+            .logo-text p { display: none; }
+            .logo-text h1 { font-size: 1.2rem; }
+            .main-content { padding: 1rem; }
+            .transactions-header { display: none; }
+            .transaction-row { grid-template-columns: 1fr; gap: 0.5rem; padding: 1rem; }
+            .transaction-actions { justify-content: flex-end; margin-top: 0.5rem; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+            .filter-bar { flex-direction: column; }
+            .filter-input { width: 100%; }
+            .user-info { display: none; }
+            .charts-grid { grid-template-columns: 1fr; }
+            .toast { white-space: normal; text-align: center; max-width: 90%; }
+            .form-row { grid-template-columns: 1fr; gap: 0; }
+            .welcome-greeting { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Login Section -->
+        <div id="loginSection" class="login-container">
+            <div class="login-card">
+                <div class="login-logo">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h2>FinTrack Pro</h2>
+                <p>Kelola keuangan pribadi dengan aman</p>
+                
+                <div class="auth-tabs">
+                    <button class="auth-tab active" data-form="login">Masuk</button>
+                    <button class="auth-tab" data-form="register">Daftar</button>
+                </div>
+                
+                <form id="loginForm" class="auth-form active">
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="loginEmail" placeholder="Email" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="loginPassword" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Masuk</button>
+                </form>
+                
+                <form id="registerForm" class="auth-form">
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="registerName" placeholder="Username" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="registerEmail" placeholder="Email" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="registerPassword" placeholder="Password (min 6)" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-check-circle"></i>
+                        <input type="password" id="confirmPassword" placeholder="Konfirmasi Password" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Daftar</button>
+                </form>
+                
+                <div class="auth-divider"><span>atau</span></div>
+                <button id="googleLoginBtn" class="btn-outline"><i class="fab fa-google"></i> Google</button>
+            </div>
+        </div>
+
+        <!-- Main App -->
+        <div id="mainApp" style="display: none;">
+            <div class="app-container">
+                <nav class="top-nav">
+                    <div class="logo-area">
+                        <div class="logo-icon"><i class="fas fa-chart-line"></i></div>
+                        <div class="logo-text"><h1>FinTrack</h1><p>Financial Tracker</p></div>
+                    </div>
+                    <div class="user-section">
+                        <button class="btn-outline-small" id="themeToggleBtn" style="padding: 0.5rem 1rem;"><i class="fas fa-moon"></i></button>
+                        <div style="position: relative;">
+                            <div class="user-profile" id="userProfileBtn">
+                                <img id="userAvatar" class="user-avatar" src="">
+                                <div class="user-info">
+                                    <div class="user-name" id="userName">Loading...</div>
+                                    <div class="user-email" id="userEmail"></div>
+                                </div>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="dropdown-menu" id="dropdownMenu">
+                                <div class="dropdown-item" id="editProfileBtn">
+                                    <i class="fas fa-user-edit"></i> 
+                                    <span>Edit Profil</span>
+                                </div>
+                                <div class="dropdown-divider" style="height: 1px; background: var(--gray-light); margin: 0.5rem 0;"></div>
+                                <div class="dropdown-item" id="logoutBtn">
+                                    <i class="fas fa-sign-out-alt"></i> 
+                                    <span>Keluar</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+
+                <main class="main-content">
+                    <div class="welcome-section">
+                        <div class="welcome-greeting" id="welcomeGreeting">Hai,</div>
+                        <div class="datetime">
+                            <span id="currentTime"><i class="far fa-clock"></i> --:-- --</span>
+                            <span id="currentDate"><i class="far fa-calendar-alt"></i> --</span>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card"><div class="stat-icon balance"><i class="fas fa-wallet"></i></div><div class="stat-value" id="totalBalance">Rp0</div><div class="stat-label">Total Saldo</div></div>
+                        <div class="stat-card"><div class="stat-icon income"><i class="fas fa-arrow-up"></i></div><div class="stat-value" id="totalIncome">Rp0</div><div class="stat-label">Pemasukan</div></div>
+                        <div class="stat-card"><div class="stat-icon expense"><i class="fas fa-arrow-down"></i></div><div class="stat-value" id="totalExpense">Rp0</div><div class="stat-label">Pengeluaran</div></div>
+                        <div class="stat-card"><div class="stat-icon count"><i class="fas fa-receipt"></i></div><div class="stat-value" id="totalCount">0</div><div class="stat-label">Transaksi</div></div>
+                    </div>
+
+                    <div class="action-bar">
+                        <button id="addTransactionBtn" class="btn-small btn-primary-small"><i class="fas fa-plus"></i> Tambah Transaksi</button>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button id="exportExcelBtn" class="btn-small btn-outline-small"><i class="fas fa-file-excel"></i> Excel</button>
+                            <button id="exportPdfBtn" class="btn-small btn-outline-small"><i class="fas fa-file-pdf"></i> PDF</button>
+                        </div>
+                    </div>
+
+                    <div class="filter-bar">
+                        <div class="filter-input"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Cari transaksi..."></div>
+                        <div class="filter-input"><i class="fas fa-filter"></i><select id="filterCategory"><option value="">Semua Kategori</option></select></div>
+                        <div class="filter-input"><i class="fas fa-calendar"></i><input type="date" id="filterDate"></div>
+                        <div class="filter-input"><i class="fas fa-sort"></i><select id="sortOrder"><option value="desc">Terbaru</option><option value="asc">Terlama</option></select></div>
+                    </div>
+
+                    <div class="transactions-container">
+                        <div class="transactions-header"><span>Transaksi</span><span>Kategori</span><span>Tanggal</span><span>Nominal</span><span>Aksi</span></div>
+                        <div id="transactionsList"><div class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada transaksi</p><p style="font-size:0.8rem;">Klik "Tambah Transaksi" untuk memulai</p></div></div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-card"><h3><i class="fas fa-chart-line"></i> Pemasukan per Bulan</h3><canvas id="incomeChart"></canvas></div>
+                        <div class="chart-card"><h3><i class="fas fa-chart-line"></i> Pengeluaran per Bulan</h3><canvas id="expenseChart"></canvas></div>
+                        <div class="chart-card"><h3><i class="fas fa-chart-pie"></i> Perbandingan</h3><canvas id="compareChart"></canvas></div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction Modal -->
+    <div id="transactionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle"><i class="fas fa-plus"></i> Tambah Transaksi</h3>
+                <button class="icon-btn" id="closeModalBtn" style="font-size: 1.5rem;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="transactionForm">
+                    <input type="hidden" id="txId">
+                    <div class="form-group"><label>Judul Transaksi</label><input type="text" id="title" placeholder="Contoh: Gaji Bulanan" required></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Nominal</label><input type="number" id="amount" placeholder="0" required></div>
+                        <div class="form-group"><label>Jenis</label><select id="type" required><option value="income">Pemasukan +</option><option value="expense">Pengeluaran -</option></select></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Kategori</label><select id="category" required></select></div>
+                        <div class="form-group"><label>Tanggal</label><input type="date" id="date" required></div>
+                    </div>
+                    <div class="form-group"><label>Keterangan (Opsional)</label><textarea id="note" rows="2" placeholder="Catatan tambahan..."></textarea></div>
+                    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                        <button type="submit" class="btn-primary-small" style="flex:1"><i class="fas fa-save"></i> Simpan</button>
+                        <button type="button" id="cancelModalBtn" class="btn-outline-small" style="flex:1"><i class="fas fa-times"></i> Batal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-edit"></i> Edit Profil</h3>
+                <button class="icon-btn" id="closeProfileModal" style="font-size: 1.5rem;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <img id="profilePreview" class="avatar-preview" src="" alt="Profile Preview">
+                
+                <!-- Upload Area -->
+                <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Klik untuk upload foto</p>
+                    <small style="color: var(--gray);">Max 5MB (JPG, PNG,)</small>
+                    <input type="file" id="profilePhotoFile" accept="image/*" style="display: none;">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> Username</label>
+                    <input type="text" id="profileUsername" placeholder="Masukkan username">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-link"></i> Atau gunakan URL Foto</label>
+                    <input type="text" id="profilePhotoUrl" placeholder="https://example.com/photo.jpg">
+                    <small style="color: var(--gray); display: block; margin-top: 0.25rem;">Masukkan URL gambar (opsional jika upload file)</small>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="profileEmail" readonly disabled style="background: var(--bg-light); cursor: not-allowed;">
+                </div>
+                <button id="saveProfileBtn" class="btn-primary" style="margin-top: 0.5rem;"><i class="fas fa-save"></i> Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <i class="fas fa-check-circle"></i>
+        <span>Notifikasi</span>
+    </div>
+
+    <script type="module">
+        // ==================== FIREBASE CONFIGURATION ====================
+        // YANG PERLU DIRUBAH: Ganti dengan konfigurasi Firebase Anda sendiri
+        const firebaseConfig = {
+            apiKey: "AIzaSyBpOc2p0FheXZ2zncJIQc3qxroMFX1iR6E",
+            authDomain: "absensi-ca90c.firebaseapp.com",
+            projectId: "absensi-ca90c",
+            storageBucket: "absensi-ca90c.firebasestorage.app",
+            messagingSenderId: "678339759327",
+            appId: "1:678339759327:web:50c850ae65c8a07455ed6a",
+            measurementId: "G-DDJYPQLW7S"
+        };
+        // =================================================================
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getFirestore, collection, query, where, addDoc, updateDoc, deleteDoc, doc, onSnapshot, orderBy, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        let currentUser = null;
+        let transactions = [];
+        let incomeChart, expenseChart, compareChart;
+        let unsubscribeFirestore = null;
+        let clockInterval = null;
+        let selectedPhotoFile = null;
+
+        const incomeCategories = ["Gaji", "Bonus", "Usaha", "Investasi", "Freelance", "Lainnya"];
+        const expenseCategories = ["Makanan", "Transportasi", "Belanja", "Hiburan", "Pendidikan", "Tagihan", "Kesehatan", "Lainnya"];
+
+        function formatRupiah(angka) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.querySelector('span').innerText = message;
+            toast.querySelector('i').className = isError ? 'fas fa-exclamation-circle' : 'fas fa-check-circle';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function updateCategoryOptions(type) {
+            const catSelect = document.getElementById('category');
+            const options = type === 'income' ? incomeCategories : expenseCategories;
+            catSelect.innerHTML = options.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
+        function startDateTime() {
+            if (clockInterval) clearInterval(clockInterval);
+            clockInterval = setInterval(() => {
+                const now = new Date();
+                const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                const date = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                document.getElementById('currentTime').innerHTML = `<i class="far fa-clock"></i> ${time}`;
+                document.getElementById('currentDate').innerHTML = `<i class="far fa-calendar-alt"></i> ${date}`;
+            }, 1000);
+        }
+
+        async function saveTransaction(transactionData) {
+            if (!currentUser) {
+                showToast("Anda harus login terlebih dahulu!", true);
+                return;
+            }
+            
+            const id = transactionData.id;
+            const data = {
+                uid: currentUser.uid, // ← PENTING: Menyimpan UID user
+                title: transactionData.title,
+                amount: Number(transactionData.amount),
+                category: transactionData.category,
+                type: transactionData.type,
+                note: transactionData.note || '',
+                date: transactionData.date,
+                createdAt: transactionData.createdAt || new Date().toISOString()
+            };
+            
+            try {
+                if (id) {
+                    // Update transaksi yang sudah ada
+                    await updateDoc(doc(db, "transactions", id), data);
+                    showToast("Transaksi diperbarui");
+                } else {
+                    // Tambah transaksi baru
+                    const docRef = await addDoc(collection(db, "transactions"), data);
+                    console.log("Transaksi tersimpan dengan ID:", docRef.id, "untuk user:", currentUser.uid);
+                    showToast("Transaksi ditambahkan");
+                }
+                document.getElementById('transactionModal').classList.remove('active');
+                document.getElementById('transactionForm').reset();
+                document.getElementById('txId').value = '';
+            } catch (error) {
+                console.error("Error menyimpan transaksi:", error);
+                showToast("Gagal menyimpan: " + error.message, true);
+            }
+        }
+
+        async function deleteTransaction(id) {
+            if (confirm("Apakah Anda yakin ingin menghapus transaksi ini?")) {
+                try {
+                    await deleteDoc(doc(db, "transactions", id));
+                    showToast("Transaksi dihapus");
+                } catch (error) {
+                    showToast("Gagal hapus: " + error.message, true);
+                }
+            }
+        }
+
+        function getFilteredTransactions() {
+            let filtered = [...transactions];
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const catFilter = document.getElementById('filterCategory').value;
+            const dateFilter = document.getElementById('filterDate').value;
+            const sort = document.getElementById('sortOrder').value;
+            
+            if (search) filtered = filtered.filter(t => t.title.toLowerCase().includes(search) || (t.note && t.note.toLowerCase().includes(search)));
+            if (catFilter) filtered = filtered.filter(t => t.category === catFilter);
+            if (dateFilter) filtered = filtered.filter(t => t.date === dateFilter);
+            filtered.sort((a, b) => sort === 'desc' ? new Date(b.date) - new Date(a.date) : new Date(a.date) - new Date(b.date));
+            return filtered;
+        }
+
+        function renderTransactions() {
+            const container = document.getElementById('transactionsList');
+            const filtered = getFilteredTransactions();
+            
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada transaksi</p><p style="font-size:0.8rem;">Klik "Tambah Transaksi" untuk memulai</p></div>';
+                return;
+            }
+            
+            container.innerHTML = filtered.map(tx => `
+                <div class="transaction-row">
+                    <div class="transaction-category">
+                        <div class="category-icon" style="background: ${tx.type === 'income' ? '#D1FAE5' : '#FEE2E2'}; color: ${tx.type === 'income' ? '#10B981' : '#EF4444'}">
+                            <i class="fas ${tx.type === 'income' ? 'fa-arrow-up' : 'fa-arrow-down'}"></i>
+                        </div>
+                        <div><div style="font-weight:600;">${escapeHtml(tx.title)}</div><div style="font-size:0.7rem;color:var(--gray);">${tx.note ? escapeHtml(tx.note.substring(0,30)) : ''}</div></div>
+                    </div>
+                    <div>${tx.category}</div>
+                    <div>${new Date(tx.date).toLocaleDateString('id-ID')}</div>
+                    <div class="${tx.type === 'income' ? 'amount-income' : 'amount-expense'}">${tx.type === 'income' ? '+' : '-'} ${formatRupiah(tx.amount)}</div>
+                    <div class="transaction-actions">
+                        <button class="icon-btn editTx" data-id="${tx.id}" title="Edit"><i class="fas fa-pen"></i></button>
+                        <button class="icon-btn deleteTx" data-id="${tx.id}" title="Hapus"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.querySelectorAll('.editTx').forEach(btn => btn.addEventListener('click', () => editTransactionById(btn.dataset.id)));
+            document.querySelectorAll('.deleteTx').forEach(btn => btn.addEventListener('click', () => deleteTransaction(btn.dataset.id)));
+        }
+
+        function editTransactionById(id) {
+            const tx = transactions.find(t => t.id === id);
+            if (!tx) return;
+            document.getElementById('txId').value = tx.id;
+            document.getElementById('title').value = tx.title;
+            document.getElementById('amount').value = tx.amount;
+            document.getElementById('type').value = tx.type;
+            updateCategoryOptions(tx.type);
+            document.getElementById('category').value = tx.category;
+            document.getElementById('date').value = tx.date;
+            document.getElementById('note').value = tx.note || '';
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Edit Transaksi';
+            document.getElementById('transactionModal').classList.add('active');
+        }
+
+        function updateDashboardStats() {
+            let totalIncome = 0, totalExpense = 0;
+            transactions.forEach(t => { if (t.type === 'income') totalIncome += t.amount; else totalExpense += t.amount; });
+            document.getElementById('totalBalance').innerHTML = formatRupiah(totalIncome - totalExpense);
+            document.getElementById('totalIncome').innerHTML = formatRupiah(totalIncome);
+            document.getElementById('totalExpense').innerHTML = formatRupiah(totalExpense);
+            document.getElementById('totalCount').innerHTML = transactions.length;
+        }
+
+        function updateCharts() {
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+            const incomeMap = new Array(12).fill(0), expenseMap = new Array(12).fill(0);
+            transactions.forEach(t => { const m = new Date(t.date).getMonth(); if (t.type === 'income') incomeMap[m] += t.amount; else expenseMap[m] += t.amount; });
+            if (incomeChart) incomeChart.destroy(); if (expenseChart) expenseChart.destroy(); if (compareChart) compareChart.destroy();
+            incomeChart = new Chart(document.getElementById('incomeChart'), { type: 'bar', data: { labels: months, datasets: [{ label: 'Pemasukan', data: incomeMap, backgroundColor: '#10B981', borderRadius: 8 }] } });
+            expenseChart = new Chart(document.getElementById('expenseChart'), { type: 'bar', data: { labels: months, datasets: [{ label: 'Pengeluaran', data: expenseMap, backgroundColor: '#EF4444', borderRadius: 8 }] } });
+            const totalInc = incomeMap.reduce((a,b)=>a+b,0), totalExp = expenseMap.reduce((a,b)=>a+b,0);
+            compareChart = new Chart(document.getElementById('compareChart'), { type: 'doughnut', data: { labels: ['Pemasukan', 'Pengeluaran'], datasets: [{ data: [totalInc, totalExp], backgroundColor: ['#10B981', '#EF4444'], borderWidth: 0 }] } });
+        }
+
+        function updateFilterCategories() {
+            const uniqueCats = [...new Set(transactions.map(t => t.category))];
+            document.getElementById('filterCategory').innerHTML = '<option value="">Semua Kategori</option>' + uniqueCats.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
+        function initFirestoreListener() {
+            if (!currentUser) return;
+            if (unsubscribeFirestore) unsubscribeFirestore();
+            
+            try {
+                // Query hanya transaksi milik user yang sedang login
+                const q = query(
+                    collection(db, "transactions"), 
+                    where("uid", "==", currentUser.uid), // ← Filter by user ID
+                    orderBy("date", "desc")
+                );
+                
+                console.log("Memulai listener untuk user:", currentUser.uid);
+                
+                unsubscribeFirestore = onSnapshot(q, (snapshot) => {
+                    transactions = snapshot.docs.map(doc => ({ 
+                        id: doc.id, 
+                        ...doc.data() 
+                    }));
+                    
+                    console.log(`Data diterima: ${transactions.length} transaksi untuk user ${currentUser.uid}`);
+                    
+                    updateDashboardStats();
+                    renderTransactions();
+                    updateFilterCategories();
+                    updateCharts();
+                }, (error) => {
+                    console.error("Firestore error:", error);
+                    showToast("Gagal memuat data: " + error.message, true);
+                    renderTransactions();
+                });
+            } catch (error) {
+                console.error("Init error:", error);
+                renderTransactions();
+            }
+        }
+
+        async function loadUserProfile(user) {
+            try {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                let username = user.displayName || user.email.split('@')[0];
+                let photoURL = user.photoURL || `https://ui-avatars.com/api/?background=4F46E5&color=fff&name=${encodeURIComponent(username)}`;
+                
+                if (userDoc.exists()) {
+                    const data = userDoc.data();
+                    username = data.username || username;
+                    photoURL = data.photoURL || photoURL;
+                } else {
+                    // Buat dokumen user baru
+                    await setDoc(doc(db, "users", user.uid), {
+                        username: username,
+                        email: user.email,
+                        photoURL: photoURL,
+                        createdAt: new Date().toISOString()
+                    });
+                    console.log("Dokumen user baru dibuat:", user.uid);
+                }
+                
+                document.getElementById('userName').innerText = username;
+                document.getElementById('userEmail').innerText = user.email;
+                document.getElementById('userAvatar').src = photoURL;
+                document.getElementById('welcomeGreeting').innerHTML = `Hai, ${username}! 👋`;
+                
+                return { username, photoURL };
+            } catch (error) {
+                console.error("Load profile error:", error);
+                const username = user.displayName || user.email.split('@')[0];
+                document.getElementById('userName').innerText = username;
+                document.getElementById('userEmail').innerText = user.email;
+                document.getElementById('welcomeGreeting').innerHTML = `Hai, ${username}! 👋`;
+                return { username, photoURL: user.photoURL };
+            }
+        }
+
+        async function uploadProfilePhoto(file) {
+            if (!file || !currentUser) return null;
+            
+            if (file.size > 5 * 1024 * 1024) {
+                showToast("Ukuran file maksimal 5MB", true);
+                return null;
+            }
+            
+            if (!file.type.startsWith('image/')) {
+                showToast("Hanya file gambar yang diperbolehkan", true);
+                return null;
+            }
+            
+            const storageRef = ref(storage, `profile_photos/${currentUser.uid}/${Date.now()}_${file.name}`);
+            
+            try {
+                showToast("Mengupload foto...");
+                const snapshot = await uploadBytes(storageRef, file);
+                const downloadURL = await getDownloadURL(snapshot.ref);
+                return downloadURL;
+            } catch (error) {
+                console.error("Upload error:", error);
+                showToast("Gagal upload foto: " + error.message, true);
+                return null;
+            }
+        }
+
+        async function updateUserProfile(username, photoURL, photoFile) {
+            if (!currentUser) return;
+            try {
+                let finalPhotoURL = photoURL;
+                
+                if (photoFile) {
+                    const uploadedURL = await uploadProfilePhoto(photoFile);
+                    if (uploadedURL) {
+                        finalPhotoURL = uploadedURL;
+                    } else {
+                        return;
+                    }
+                }
+                
+                if (!finalPhotoURL) {
+                    finalPhotoURL = `https://ui-avatars.com/api/?background=4F46E5&color=fff&name=${encodeURIComponent(username)}`;
+                }
+                
+                await updateProfile(currentUser, { 
+                    displayName: username, 
+                    photoURL: finalPhotoURL 
+                });
+                
+                await setDoc(doc(db, "users", currentUser.uid), {
+                    username: username,
+                    email: currentUser.email,
+                    photoURL: finalPhotoURL,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+                
+                await loadUserProfile(currentUser);
+                showToast("Profil berhasil diperbarui!");
+                document.getElementById('profileModal').classList.remove('active');
+                
+                selectedPhotoFile = null;
+                document.getElementById('profilePhotoFile').value = '';
+                
+            } catch (error) {
+                console.error("Update profile error:", error);
+                showToast("Gagal update profil: " + error.message, true);
+            }
+        }
+
+        function escapeHtml(text) { 
+            if (!text) return ''; 
+            const div = document.createElement('div'); 
+            div.textContent = text; 
+            return div.innerHTML; 
+        }
+
+        function exportToExcel() {
+            if (transactions.length === 0) return showToast("Tidak ada data", true);
+            const ws = XLSX.utils.json_to_sheet(transactions.map(t => ({ 
+                Judul: t.title, 
+                Nominal: t.amount, 
+                Kategori: t.category, 
+                Tipe: t.type === 'income' ? 'Pemasukan' : 'Pengeluaran', 
+                Tanggal: t.date, 
+                Keterangan: t.note || '-' 
+            })));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Transaksi");
+            XLSX.writeFile(wb, `transaksi_${new Date().toISOString().split('T')[0]}.xlsx`);
+            showToast("Export Excel berhasil");
+        }
+
+        async function exportToPDF() {
+            if (transactions.length === 0) return showToast("Tidak ada data", true);
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(16);
+            doc.text("FinTrack - Laporan Keuangan", 14, 20);
+            doc.setFontSize(10);
+            doc.text(`User: ${currentUser.displayName || currentUser.email}`, 14, 30);
+            doc.text(`Tanggal: ${new Date().toLocaleDateString('id-ID')}`, 14, 37);
+            doc.autoTable({ 
+                head: [['Judul', 'Nominal', 'Kategori', 'Tipe', 'Tanggal']], 
+                body: transactions.map(t => [t.title, formatRupiah(t.amount), t.category, t.type === 'income' ? 'Pemasukan' : 'Pengeluaran', t.date]), 
+                startY: 45, 
+                headStyles: { fillColor: [79, 70, 229] } 
+            });
+            doc.save(`laporan_${new Date().toISOString().split('T')[0]}.pdf`);
+            showToast("Export PDF berhasil");
+        }
+
+        // ==================== AUTHENTICATION ====================
+        onAuthStateChanged(auth, async (user) => {
+            console.log("Auth state changed:", user ? `User: ${user.uid}` : "No user");
+            
+            if (user) {
+                currentUser = user;
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'block';
+                startDateTime();
+                await loadUserProfile(user);
+                initFirestoreListener(); // ← Mulai listener untuk user ini
+                showToast(`Selamat datang, ${user.displayName || user.email.split('@')[0]}!`);
+            } else {
+                // User logout
+                if (clockInterval) clearInterval(clockInterval);
+                if (unsubscribeFirestore) {
+                    unsubscribeFirestore(); // ← Hentikan listener
+                    unsubscribeFirestore = null;
+                }
+                currentUser = null;
+                transactions = [];
+                document.getElementById('loginSection').style.display = 'flex';
+                document.getElementById('mainApp').style.display = 'none';
+                
+                // Reset tampilan
+                document.getElementById('transactionsList').innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada transaksi</p></div>';
+                updateDashboardStats();
+                if (incomeChart) incomeChart.destroy();
+                if (expenseChart) expenseChart.destroy();
+                if (compareChart) compareChart.destroy();
+            }
+        });
+
+        // Auth Forms
+        document.querySelectorAll('.auth-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const formType = tab.dataset.form;
+                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById('loginForm').classList.toggle('active', formType === 'login');
+                document.getElementById('registerForm').classList.toggle('active', formType === 'register');
+            });
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            if (!email || !password) return showToast("Harap isi email dan password!", true);
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                showToast("Login berhasil!");
+            } catch (err) { 
+                let msg = "Login gagal! ";
+                if (err.code === 'auth/user-not-found') msg += "Email tidak terdaftar.";
+                else if (err.code === 'auth/wrong-password') msg += "Password salah.";
+                else if (err.code === 'auth/invalid-email') msg += "Email tidak valid.";
+                else msg += err.message;
+                showToast(msg, true);
+            }
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const pass = document.getElementById('registerPassword').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            if (!username || !email || !pass) return showToast("Harap isi semua data!", true);
+            if (pass !== confirm) return showToast("Password tidak cocok", true);
+            if (pass.length < 6) return showToast("Password minimal 6 karakter", true);
+            try {
+                const cred = await createUserWithEmailAndPassword(auth, email, pass);
+                await updateProfile(cred.user, { displayName: username });
+                await setDoc(doc(db, "users", cred.user.uid), {
+                    username: username,
+                    email: email,
+                    photoURL: `https://ui-avatars.com/api/?background=4F46E5&color=fff&name=${encodeURIComponent(username)}`,
+                    createdAt: new Date().toISOString()
+                });
+                showToast("Pendaftaran berhasil! Selamat datang " + username);
+            } catch (err) { 
+                let msg = "Pendaftaran gagal! ";
+                if (err.code === 'auth/email-already-in-use') msg += "Email sudah terdaftar.";
+                else if (err.code === 'auth/invalid-email') msg += "Email tidak valid.";
+                else msg += err.message;
+                showToast(msg, true);
+            }
+        });
+
+        document.getElementById('googleLoginBtn').addEventListener('click', async () => {
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                const username = result.user.displayName || result.user.email.split('@')[0];
+                await setDoc(doc(db, "users", result.user.uid), {
+                    username: username,
+                    email: result.user.email,
+                    photoURL: result.user.photoURL || `https://ui-avatars.com/api/?background=4F46E5&color=fff&name=${encodeURIComponent(username)}`,
+                    createdAt: new Date().toISOString()
+                }, { merge: true });
+                showToast("Login Google berhasil!");
+            } catch (err) { 
+                showToast("Login Google gagal: " + err.message, true); 
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => { 
+            await signOut(auth); 
+            showToast("Logout berhasil");
+        });
+
+        // Modal Handlers
+        const transactionModal = document.getElementById('transactionModal');
+        const profileModal = document.getElementById('profileModal');
+        
+        document.getElementById('addTransactionBtn').onclick = () => {
+            document.getElementById('transactionForm').reset();
+            document.getElementById('txId').value = '';
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus"></i> Tambah Transaksi';
+            document.getElementById('type').value = 'income';
+            updateCategoryOptions('income');
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+            transactionModal.classList.add('active');
+        };
+        
+        document.getElementById('editProfileBtn').onclick = async () => {
+            if (!currentUser) {
+                return showToast("Anda harus login terlebih dahulu", true);
+            }
+
+            try {
+                const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+                const currentUsername = userDoc.exists() ? userDoc.data().username : currentUser.displayName;
+                const currentPhoto = userDoc.exists() ? userDoc.data().photoURL : currentUser.photoURL;
+                document.getElementById('profileUsername').value = currentUsername || '';
+                document.getElementById('profilePhotoUrl').value = currentPhoto || '';
+                document.getElementById('profileEmail').value = currentUser.email || '';
+                document.getElementById('profilePreview').src = currentPhoto || `https://ui-avatars.com/api/?background=4F46E5&color=fff&name=${encodeURIComponent(currentUsername || 'User')}`;
+                
+                selectedPhotoFile = null;
+                document.getElementById('profilePhotoFile').value = '';
+                document.getElementById('dropdownMenu').classList.remove('show');
+                profileModal.classList.add('active');
+            } catch (error) {
+                console.error("Edit profile load error:", error);
+                showToast("Gagal memuat profil", true);
+            }
+        };
+        
+        document.getElementById('uploadArea').addEventListener('click', () => {
+            document.getElementById('profilePhotoFile').click();
+        });
+        
+        document.getElementById('profilePhotoFile').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast("Ukuran file maksimal 5MB", true);
+                    e.target.value = '';
+                    return;
+                }
+                
+                if (!file.type.startsWith('image/')) {
+                    showToast("Hanya file gambar yang diperbolehkan", true);
+                    e.target.value = '';
+                    return;
+                }
+                
+                selectedPhotoFile = file;
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    document.getElementById('profilePreview').src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+                
+                document.getElementById('profilePhotoUrl').value = '';
+            }
+        });
+        
+        document.getElementById('saveProfileBtn').onclick = async () => {
+            const newUsername = document.getElementById('profileUsername').value;
+            const newPhotoUrl = document.getElementById('profilePhotoUrl').value;
+            const saveBtn = document.getElementById('saveProfileBtn');
+            
+            if (!newUsername) return showToast("Username tidak boleh kosong", true);
+            
+            saveBtn.disabled = true;
+            try {
+                await updateUserProfile(newUsername, newPhotoUrl, selectedPhotoFile);
+                selectedPhotoFile = null;
+                document.getElementById('profilePhotoFile').value = '';
+            } catch (error) {
+                console.error("Save profile error:", error);
+                showToast("Gagal memperbarui profil", true);
+            } finally {
+                saveBtn.disabled = false;
+            }
+        };
+        
+        document.getElementById('profilePhotoUrl').addEventListener('input', (e) => {
+            const url = e.target.value;
+            const username = document.getElementById('profileUsername').value || 'User';
+            document.getElementById('profilePreview').src = url || `https://ui-avatars.com/api/?background=4F46E5&color=fff&name=${encodeURIComponent(username)}`;
+            
+            if (url) {
+                selectedPhotoFile = null;
+                document.getElementById('profilePhotoFile').value = '';
+            }
+        });
+        
+        document.getElementById('profileUsername').addEventListener('input', (e) => {
+            const username = e.target.value || 'User';
+            const currentPhoto = document.getElementById('profilePhotoUrl').value;
+            if (!currentPhoto && !selectedPhotoFile) {
+                document.getElementById('profilePreview').src = `https://ui-avatars.com/api/?background=4F46E5&color=fff&name=${encodeURIComponent(username)}`;
+            }
+        });
+        
+        document.getElementById('closeProfileModal').onclick = () => {
+            profileModal.classList.remove('active');
+            selectedPhotoFile = null;
+            document.getElementById('profilePhotoFile').value = '';
+        };
+        document.getElementById('closeModalBtn').onclick = () => transactionModal.classList.remove('active');
+        document.getElementById('cancelModalBtn').onclick = () => transactionModal.classList.remove('active');
+        
+        document.getElementById('transactionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('txId').value;
+            const title = document.getElementById('title').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const type = document.getElementById('type').value;
+            const category = document.getElementById('category').value;
+            const date = document.getElementById('date').value;
+            const note = document.getElementById('note').value;
+            if (!title || isNaN(amount) || !category || !date) return showToast("Lengkapi semua data!", true);
+            await saveTransaction({ id, title, amount, type, category, date, note, createdAt: new Date().toISOString() });
+        });
+
+        document.getElementById('type').addEventListener('change', (e) => updateCategoryOptions(e.target.value));
+        document.getElementById('searchInput').addEventListener('input', () => renderTransactions());
+        document.getElementById('filterCategory').addEventListener('change', () => renderTransactions());
+        document.getElementById('filterDate').addEventListener('change', () => renderTransactions());
+        document.getElementById('sortOrder').addEventListener('change', () => renderTransactions());
+        document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
+        document.getElementById('exportPdfBtn').addEventListener('click', exportToPDF);
+
+        // Dropdown Menu
+        const profileBtn = document.getElementById('userProfileBtn');
+        const dropdown = document.getElementById('dropdownMenu');
+        profileBtn?.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('show'); });
+        document.addEventListener('click', () => dropdown?.classList.remove('show'));
+
+        // Dark Mode
+        const darkMode = localStorage.getItem('darkMode') === 'true';
+        if (darkMode) document.body.classList.add('dark');
+        document.getElementById('themeToggleBtn').addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+        });
+
+        // Initialize
+        updateCategoryOptions('income');
+        document.getElementById('date').value = new Date().toISOString().split('T')[0];
+        
+        console.log("Aplikasi FinTrack siap digunakan!");
+        console.log("Data transaksi tersimpan per akun (berdasarkan UID)");
+        console.log("Pastikan Firestore Rules sudah dikonfigurasi dengan benar");
+    
+        const data = {
+    uid: currentUser.uid, // ← Ini kunci pemisahan data
+    title: transactionData.title,
+    amount: Number(transactionData.amount),
+    // ... field lainnya
+};
+
+const q = query(
+    collection(db, "transactions"), 
+    where("uid", "==", currentUser.uid), // ← Filter
+    orderBy("date", "desc")
+);
+
+
+    </script>
+</body>
+</html>
